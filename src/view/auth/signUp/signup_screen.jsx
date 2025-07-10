@@ -2,9 +2,12 @@ import { useState } from "@lynx-js/react";
 import { useNavigate } from 'react-router';
 import "../../../App.css";
 import { doCreateUserWithEmailAndPassword } from '../../../service/firebase/auth'
-import { sendPasswordResetEmail } from "firebase/auth";
+import { addDocumentToFirestore } from '../../../service/api_services/firebase_api'
+import User from '../../../model/user_model';
 
 const SignUpScreen = (props) => {
+
+
     const [email, setEmail] = useState("");
     const [userName, setUserName] = useState("");
 
@@ -27,20 +30,21 @@ const SignUpScreen = (props) => {
         const currentValue = e.detail.value.trim();
         setPassword(currentValue);
     };
-    const handleLogin = async () => {
-        console.log("Email:", email);
-        console.log("Password:", password);
-        // navigate('/UserListScreen');
+
+    const newUser = new User("jimmysuthar9999@gmail.com", "userName");
+
+    async function handleLogin() {
 
         try {
-            await doCreateUserWithEmailAndPassword("abc12221@gmail.com", "Testing", "Suthar@123")
-                .then((user) => {
+            await doCreateUserWithEmailAndPassword("jimmysuthar9999@gmail.com", "Suthar@123")
+                .then(async (user) => {
                     console.log("Login successful");
-                    setSuccess(user.user.email + " Logged In Successfully");
-                    // navigate('/UserListScreen');
+                    const userCredential = await addDocumentToFirestore('users', newUser.toFirestore());
+                    setSuccess(userCredential.id + " Logged In Successfully");
+
                 }).catch((error) => {
                     console.error("Login failed:", error)
-                    setSuccess(error + " Logged In Successfully");
+                    setSuccess(error + " Error Occured");
                 });
         } catch (error) {
             console.error("Login failed:", error);
@@ -50,6 +54,9 @@ const SignUpScreen = (props) => {
 
         // Add your login logic here
     };
+
+
+
 
     return (
         <view style={{
@@ -135,7 +142,12 @@ const SignUpScreen = (props) => {
                         cursor: 'pointer',
                         transition: 'background-color 0.3s'
                     }}
-                    bindtap={handleLogin}
+                    bindtap={async () => {
+                        setSuccess("Button Clicked");
+                        handleLogin();
+
+
+                    }}
                 >
                     <text style={{
                         color: '#ffffff',
@@ -155,7 +167,7 @@ const SignUpScreen = (props) => {
 
             <text style={{
                 marginTop: '20px',
-                color: 'black',
+                color: 'red',
                 fontSize: '16px',
                 fontWeight: 'bold'
             }}>{success}</text>
