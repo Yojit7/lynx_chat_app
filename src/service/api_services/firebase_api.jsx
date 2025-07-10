@@ -39,42 +39,42 @@ export const addDocumentToFirestore = async (collection, data) => {
     }
 };
 
-// /**
-//  * Get all documents from a Firestore collection
-//  * @param {string} collection - Collection name
-//  * @returns {Promise<Array>} - Array of documents
-//  */
-// export const getDocumentsFromFirestore = async (collection) => {
-//     try {
-//         const url = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents/${collection}`;
+/**
+ * Get all documents from a Firestore collection
+ * @param {string} collection - Collection name
+ * @returns {Promise<Array>} - Array of documents
+ */
+export const getDocumentsFromFirestore = async (collection) => {
+    try {
+        const url = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents/${collection}`;
         
-//         const response = await fetch(url, {
-//             method: 'GET',
-//             headers: {
-//                 'Content-Type': 'application/json',
-//             }
-//         });
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        });
         
-//         if (!response.ok) {
-//             const errorData = await response.text();
-//             throw new Error(`HTTP error! status: ${response.status}, message: ${errorData}`);
-//         }
+        if (!response.ok) {
+            const errorData = await response.text();
+            throw new Error(`HTTP error! status: ${response.status}, message: ${errorData}`);
+        }
 
-//         const result = await response.json();
+        const result = await response.json();
         
-//         if (result.documents) {
-//             return result.documents.map(doc => ({
-//                 id: doc.name.split('/').pop(),
-//                 ...convertFromFirestoreFormat(doc.fields)
-//             }));
-//         }
+        if (result.documents) {
+            return result.documents.map(doc => ({
+                id: doc.name.split('/').pop(),
+                ...convertFromFirestoreFormat(doc.fields)
+            }));
+        }
         
-//         return [];
-//     } catch (error) {
-//         console.error("Error getting documents: ", error);
-//         throw error;
-//     }
-// };
+        return [];
+    } catch (error) {
+        console.error("Error getting documents: ", error);
+        throw error;
+    }
+};
 
 // /**
 //  * Get a specific document from Firestore

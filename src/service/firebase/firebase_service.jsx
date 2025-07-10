@@ -1,7 +1,7 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
- 
+
 const firebaseConfig = {
     apiKey: "AIzaSyCVIrAiB56GM9kTSLayZz8ZGumjigbi8hc",
     authDomain: "lynxchatwebapp.firebaseapp.com",
@@ -19,5 +19,5 @@ export const app = initializeApp(firebaseConfig);
 // Initialize Firebase services
 export const auth = getAuth(app);
 
-export { app, auth, db }
+export { app, auth }
 

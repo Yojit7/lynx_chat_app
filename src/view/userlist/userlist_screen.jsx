@@ -1,75 +1,12 @@
 import { useState, useEffect } from "@lynx-js/react";
 import { useNavigate } from 'react-router';
 import "../../App.css";
-
+import { getDocumentsFromFirestore } from '../../service/api_services/firebase_api'
 const UserListScreen = (props) => {
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
     const navigate = useNavigate();
-
-    // Demo users data
-    const demoUsers = [
-        {
-            id: "1",
-            displayName: "Alice Johnson",
-            email: "alice.johnson@example.com",
-            isOnline: true
-        },
-        {
-            id: "2",
-            displayName: "Bob Smith",
-            email: "bob.smith@example.com",
-            isOnline: false
-        },
-        {
-            id: "3",
-            displayName: "Charlie Brown",
-            email: "charlie.brown@example.com",
-            isOnline: true
-        },
-        {
-            id: "4",
-            displayName: "Diana Prince",
-            email: "diana.prince@example.com",
-            isOnline: true
-        },
-        {
-            id: "5",
-            displayName: "Edward Wilson",
-            email: "edward.wilson@example.com",
-            isOnline: false
-        },
-        {
-            id: "6",
-            displayName: "Fiona Davis",
-            email: "fiona.davis@example.com",
-            isOnline: true
-        },
-        {
-            id: "7",
-            displayName: "George Miller",
-            email: "george.miller@example.com",
-            isOnline: false
-        },
-        {
-            id: "8",
-            displayName: "Jimmy Suthar",
-            email: "hannah.lee@example.com",
-            isOnline: true
-        },
-            {
-            id: "9",
-            displayName: "Yojit Suthar",
-            email: "hannah.lee@example.com",
-            isOnline: true
-        },
-            {
-            id: "10",
-            displayName: "Sutradhar",
-            email: "hannah.lee@example.com",
-            isOnline: true
-        }
-    ];
+    const [apiResponse, setApiResponse] = useState(null);
 
     useEffect(() => {
         fetchUsers();
@@ -78,11 +15,14 @@ const UserListScreen = (props) => {
     const fetchUsers = async () => {
         try {
             setLoading(true);
-            // Simulate API call delay
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            setUsers(demoUsers);
+            // Call your actual API
+            const response = await getDocumentsFromFirestore('users'); // Replace 'users' with your collection name
+            console.log('API Response:', response); // Log to console
+            setApiResponse(response); // Store the response to display
+            setUsers(response); // Use API data or fallback to demo
         } catch (error) {
             console.error("Error fetching users:", error);
+            setApiResponse({ error: error.message }); // Store error info
         } finally {
             setLoading(false);
         }
@@ -90,11 +30,7 @@ const UserListScreen = (props) => {
 
     const handleUserSelect = (selectedUser) => {
         // Navigate to chat screen with selected user
-        navigate('/ChatScreen', { 
-            state: { 
-                chatWith: selectedUser 
-            }
-        });
+        navigate('/ChatScreen');
     };
 
     const handleBackToLogin = () => {
@@ -142,8 +78,8 @@ const UserListScreen = (props) => {
                     fontWeight: 'bold',
                     color: '#333333'
                 }}>Select User to Chat</text>
-                
-                <text 
+
+                <text
                     style={{
                         fontSize: '16px',
                         color: '#007AFF',
@@ -156,7 +92,6 @@ const UserListScreen = (props) => {
                 </text>
             </view>
 
-            {/* Scrollable Users List using scroll-view */}
             <scroll-view
                 scroll-orientation="vertical"
                 style={{
@@ -206,7 +141,7 @@ const UserListScreen = (props) => {
                                     flexDirection: 'row',
                                     alignItems: 'center'
                                 }}>
-                                    {/* Avatar */}
+
                                     <view style={{
                                         width: '50px',
                                         height: '50px',
@@ -222,11 +157,11 @@ const UserListScreen = (props) => {
                                             fontSize: '18px',
                                             fontWeight: 'bold'
                                         }}>
-                                            {user.displayName ? user.displayName.charAt(0).toUpperCase() : user.email.charAt(0).toUpperCase()}
+                                            {user.email.charAt(0).toUpperCase()}
                                         </text>
                                     </view>
 
-                                    {/* User Info */}
+
                                     <view style={{
                                         flex: 1
                                     }}>
@@ -236,7 +171,7 @@ const UserListScreen = (props) => {
                                             color: '#333333',
                                             marginBottom: '4px'
                                         }}>
-                                            {user.displayName || 'Unknown User'}
+                                            {user.userName || 'Unknown User'}
                                         </text>
                                         <text style={{
                                             fontSize: '14px',
@@ -244,18 +179,10 @@ const UserListScreen = (props) => {
                                         }}>
                                             {user.email}
                                         </text>
-                                        {user.isOnline && (
-                                            <text style={{
-                                                fontSize: '12px',
-                                                color: '#4CAF50',
-                                                marginTop: '2px'
-                                            }}>
-                                                • Online
-                                            </text>
-                                        )}
+
                                     </view>
 
-                                    {/* Arrow indicator */}
+
                                     <text style={{
                                         fontSize: '20px',
                                         color: '#cccccc'
@@ -268,7 +195,7 @@ const UserListScreen = (props) => {
                     )}
                 </view>
 
-                {/* Refresh Button */}
+
                 <view style={{
                     textAlign: 'center',
                     paddingBottom: '30px'
@@ -289,8 +216,11 @@ const UserListScreen = (props) => {
                         Refresh User List
                     </text>
                 </view>
+
+
             </scroll-view>
-        </view>
+
+        </view >
     );
 };
 

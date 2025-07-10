@@ -28,20 +28,19 @@ const SignUpScreen = (props) => {
 
     const handleUserNameInput = (e) => {
         const currentValue = e.detail.value.trim();
-        setPassword(currentValue);
+        setUserName(currentValue);
     };
 
-    const newUser = new User("jimmysuthar9999@gmail.com", "userName");
+    const newUser = new User(userName, email);
 
     async function handleLogin() {
-
         try {
-            await doCreateUserWithEmailAndPassword("jimmysuthar9999@gmail.com", "Suthar@123")
+            await doCreateUserWithEmailAndPassword(email, password)
                 .then(async (user) => {
                     console.log("Login successful");
                     const userCredential = await addDocumentToFirestore('users', newUser.toFirestore());
                     setSuccess(userCredential.id + " Logged In Successfully");
-
+                    navigate('/UserListScreen')
                 }).catch((error) => {
                     console.error("Login failed:", error)
                     setSuccess(error + " Error Occured");
@@ -51,8 +50,6 @@ const SignUpScreen = (props) => {
             setSuccess("Login failed: " + error.message);
         }
 
-
-        // Add your login logic here
     };
 
 
@@ -74,7 +71,7 @@ const SignUpScreen = (props) => {
                 color: '#333333',
                 marginBottom: '40px',
                 textAlign: 'center'
-            }}>SingUp Screen</text>
+            }}>SignUp Screen</text>
 
             <view style={{
                 width: '100%',

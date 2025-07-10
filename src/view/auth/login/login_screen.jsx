@@ -19,24 +19,23 @@ const LoginScreen = (props) => {
     };
 
     const handleLogin = async () => {
-        console.log("Email:", email);
-        console.log("Password:", password);
-        // navigate('/UserListScreen');
 
-        try {
-            await doSignInWithEmailAndPassword(email, password)
-                .then((user) => {
-                    console.log("Login successful");
-                    setSuccess(user.user.email + " Logged In Successfully");
-                    // navigate('/UserListScreen');
-                }).catch((error) => {
-                    console.error("Login failed:", error)
-                    setSuccess(error + " Logged In Successfully");
-                });
-        } catch (error) {
-            console.error("Login failed:", error);
-            setSuccess("Login failed: " + error.message);
-        }
+        navigate('/UserListScreen');
+
+        // try {
+        //     await doSignInWithEmailAndPassword(email, password)
+        //         .then((user) => {
+        //             console.log("Login successful");
+        //             setSuccess(user.user.email + " Logged In Successfully");
+        //             navigate('/UserListScreen');
+        //         }).catch((error) => {
+        //             console.error("Login failed:", error)
+        //             setSuccess(error + " Logged In Successfully");
+        //         });
+        // } catch (error) {
+        //     console.error("Login failed:", error);
+        //     setSuccess("Login failed: " + error.message);
+        // }
 
         // Add your login logic here
     };
