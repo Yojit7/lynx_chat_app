@@ -1,55 +1,98 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { useNavigate } from 'react-router';
+import { useNavigate, useLocation } from 'react-router';
+import { sendMessage, getMessagesForChatRoom } from './chat_screen_api';
 
 const ChatScreen = () => {
     const navigate = useNavigate();
+    const location = useLocation();
+    const [message, setMessage] = useState('');
+    const [messages, setMessages] = useState([]);
+    const [chatData, setChatData] = useState(null);
+    const [loading, setLoading] = useState(true);
 
-    const [message, setMessage] = useState('')
+    useEffect(() => {
+        // Get data from navigation state
+        const receivedData = location.state;
 
-    const [messages, setMessages] = useState([
-        { id: 1, text: "Hello! How are you?", sender: "receiver" },
-        { id: 2, text: "I'm good, thanks! How about you?", sender: "sender" },
-        { id: 3, text: "Doing great! What are you up to today?", sender: "receiver" },
-        { id: 4, text: "Just working on some coding projects", sender: "sender" },
-        { id: 4, text: "Just working on some coding projects", sender: "sender" },
-        { id: 4, text: "Just working on some coding projects", sender: "sender" },
-        { id: 4, text: "Just working on some coding projects", sender: "sender" },
-        { id: 3, text: "Doing great! What are you up to today?", sender: "receiver" },
-        { id: 4, text: "Just working on some coding projects", sender: "sender" },
-        { id: 3, text: "Doing great! What are you up to today?", sender: "receiver" },
-        { id: 4, text: "Just working on some coding projects", sender: "sender" },
-        { id: 4, text: "Just working on some coding projects", sender: "sender" },
-        { id: 3, text: "Doing great! What are you up to today?", sender: "receiver" },
-        { id: 4, text: "Just working on some coding projects", sender: "sender" },
-        { id: 4, text: "Just working on some coding projects", sender: "sender" },
-        { id: 4, text: "Just working on some coding projects", sender: "sender" },
-        { id: 3, text: "Doing great! What are you up to today?", sender: "receiver" },
-        { id: 4, text: "Just working on some coding projects", sender: "sender" },
-        { id: 3, text: "Doing great! What are you up to today?", sender: "receiver" },
-    ])
+        if (receivedData) {
+            setChatData(receivedData);
+            console.log('Received chat data:', receivedData);
 
+            // Load existing messages
+            loadMessages(receivedData.senderId, receivedData.receiverId);
+        } else {
+            console.error('No chat data received');
+            navigate('/UserListScreen');
+        }
+    }, [location.state, navigate]);
+
+    const loadMessages = async (senderId, receiverId) => {
+        try {
+            const chatMessages = await getMessagesForChatRoom(senderId, receiverId);
+            setMessages(chatMessages);
+            console.log('Loaded messages:', chatMessages);
+        } catch (error) {
+            console.error('Error loading messages:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleSendMessage = async () => {
+        if (message.trim() && chatData) {
+            try {
+                const messageData = {
+                    receiverId: chatData.receiverId,
+                    senderId: chatData.senderId,
+                    message: message.trim(),
+
+                };
+
+                console.log('Sending message:', messageData);
+
+                // Send message to Firestore
+                const sentMessage = await sendMessage(messageData);
+
+                // Update local state
+                setMessages(prevMessages => [...prevMessages, sentMessage]);
+                setMessage('');
+            } catch (error) {
+                console.error('Error sending message:', error);
+            }
+        }
+    };
 
     const handleMessageInput = (e) => {
         const currentValue = e.detail.value.trim();
         setMessage(currentValue);
     };
 
-    const sendMessage = () => {
-        if (message.trim()) {
-            setMessages([...messages, {
-                id: Date.now(),
-                text: message,
-                sender: "sender"
-            }])
-            setMessage('')
-        }
+    if (loading) {
+        return (
+            <view style={{
+                height: '100vh',
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                backgroundColor: '#f0f0f0'
+            }}>
+                <text>Loading chat...</text>
+            </view>
+        );
     }
 
-
-    const handleKeyPress = (e) => {
-        if (e.key === 'Enter') {
-            sendMessage()
-        }
+    if (!chatData) {
+        return (
+            <view style={{
+                height: '100vh',
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                backgroundColor: '#f0f0f0'
+            }}>
+                <text>No chat data available</text>
+            </view>
+        );
     }
 
     return (
@@ -75,7 +118,6 @@ const ChatScreen = () => {
                     fontSize: '35px',
                     color: '#cccccc',
                     flex: 1,
-
                     textAlign: 'left'
                 }}>
                     ⬅
@@ -86,9 +128,32 @@ const ChatScreen = () => {
                     flex: 2,
                     textAlign: 'center'
                 }}>
-                    Chat
+                    Chat with {chatData.receiverName}
                 </text>
                 <view style={{ flex: 1 }}></view>
+            </view>
+
+            {/* Chat Data Debug Info */}
+            <view style={{
+                padding: '10px',
+                backgroundColor: '#ffffff',
+                margin: '10px',
+                borderRadius: '8px',
+                boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+            }}>
+                <text style={{
+                    fontSize: '12px',
+                    color: '#666666',
+                    marginBottom: '5px'
+                }}>
+                    Sender: {chatData.senderName} ({chatData.senderId})
+                </text>
+                <text style={{
+                    fontSize: '12px',
+                    color: '#666666'
+                }}>
+                    Receiver: {chatData.receiverName} ({chatData.receiverId})
+                </text>
             </view>
 
             {/* Messages Area */}
@@ -97,30 +162,35 @@ const ChatScreen = () => {
                 style={{
                     flex: 1,
                     width: "100%",
-                    height: "calc(100% - 120px)",
                     backgroundColor: '#f0f0f0',
                     padding: '20px'
                 }}
                 id="messages-container"
             >
-                {messages.map((msg) => (
-                    <view key={msg.id} style={{
+                {messages.map((msg, index) => (
+                    <view key={msg.id || index} style={{
                         marginBottom: '10px',
                         display: 'flex',
-                        justifyContent: msg.sender === 'sender' ? 'flex-end' : 'flex-start'
+                        justifyContent: msg.senderId === chatData.senderId ? 'flex-end' : 'flex-start'
                     }}>
                         <view style={{
                             padding: '10px 15px',
                             borderRadius: '15px',
                             maxWidth: '60%',
-                            backgroundColor: msg.sender === 'sender' ? '#007bff' : '#e0e0e0',
-                            color: msg.sender === 'sender' ? 'white' : 'black'
+                            backgroundColor: msg.senderId === chatData.senderId ? '#007bff' : '#e0e0e0',
+                            color: msg.senderId === chatData.senderId ? 'white' : 'black'
                         }}>
-                            <text>{msg.text}</text>
+                            <text>{msg.message}</text>
+                            <text style={{
+                                fontSize: '12px',
+                                opacity: 0.7,
+                                marginTop: '5px'
+                            }}>
+                                {new Date(msg.timeStamp).toLocaleTimeString()}
+                            </text>
                         </view>
                     </view>
                 ))}
-
             </scroll-view>
 
             {/* Input Area */}
@@ -150,7 +220,7 @@ const ChatScreen = () => {
                         cursor: 'pointer',
                         transition: 'background-color 0.3s'
                     }}
-                    bindtap={() => { }}
+                    bindtap={handleSendMessage}
                 >
                     <text style={{
                         color: '#ffffff',
@@ -161,7 +231,7 @@ const ChatScreen = () => {
                 </view>
             </view>
         </view>
-    )
-}
+    );
+};
 
-export default ChatScreen
+export default ChatScreen;

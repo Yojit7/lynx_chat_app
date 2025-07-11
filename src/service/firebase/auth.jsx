@@ -1,8 +1,6 @@
 import { auth } from '../../service/firebase/firebase_service';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
 
-
-
 export const doCreateUserWithEmailAndPassword = async (email, password) => {
     try {
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
@@ -33,3 +31,23 @@ export const doSignOut = async () => {
         throw error;
     }
 }
+
+
+export const getCurrentUser = () => {
+    return auth.currentUser.email;
+};
+
+export const isUserAuthenticated = () => {
+    return auth.currentUser !== null;
+};
+
+
+export const getCurrentUserToken = async () => {
+    const user = auth.currentUser;
+    if (user) {
+        return await user.getIdToken();
+    }
+    return null;
+};
+
+

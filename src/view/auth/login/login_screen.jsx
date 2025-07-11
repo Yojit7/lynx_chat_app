@@ -2,6 +2,7 @@ import { useState } from "@lynx-js/react";
 import { useNavigate } from 'react-router';
 import "../../../App.css";
 import { doSignInWithEmailAndPassword } from '../../../service/firebase/auth'
+
 const LoginScreen = (props) => {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
@@ -20,24 +21,20 @@ const LoginScreen = (props) => {
 
     const handleLogin = async () => {
 
-        navigate('/UserListScreen');
-
-        // try {
-        //     await doSignInWithEmailAndPassword(email, password)
-        //         .then((user) => {
-        //             console.log("Login successful");
-        //             setSuccess(user.user.email + " Logged In Successfully");
-        //             navigate('/UserListScreen');
-        //         }).catch((error) => {
-        //             console.error("Login failed:", error)
-        //             setSuccess(error + " Logged In Successfully");
-        //         });
-        // } catch (error) {
-        //     console.error("Login failed:", error);
-        //     setSuccess("Login failed: " + error.message);
-        // }
-
-        // Add your login logic here
+        try {
+            await doSignInWithEmailAndPassword("jimmysuthar789@gmail.com", "Suthar@123")
+                .then((user) => {
+                    console.log("Login successful");
+                    setSuccess(user.user.email + " Logged In Successfully");
+                    navigate('/UserListScreen');
+                }).catch((error) => {
+                    console.error("Login failed:", error)
+                    setSuccess(error + " Logged In Successfully");
+                });
+        } catch (error) {
+            console.error("Login failed:", error);
+            setSuccess("Login failed: " + error.message);
+        }
     };
 
     return (

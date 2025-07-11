@@ -1,18 +1,15 @@
+import { getCurrentUser } from '../firebase/auth'
+
 const PROJECT_ID = 'lynxchatwebapp'; // Replace with your actual Firebase project ID
 
-/**
- * Add a document to Firestore collection
- * @param {string} collection - Collection name
- * @param {object} data - Data to store
- * @returns {Promise<{id: string}>} - Document ID
- */
+
 export const addDocumentToFirestore = async (collection, data) => {
     try {
         const url = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents/${collection}`;
-        
+
         // Convert data to Firestore format
         const firestoreData = convertToFirestoreFormat(data);
-        
+
         const response = await fetch(url, {
             method: 'POST',
             headers: {
@@ -30,7 +27,7 @@ export const addDocumentToFirestore = async (collection, data) => {
 
         const result = await response.json();
         const docId = result.name.split('/').pop();
-        
+
         console.log("Document written with ID: ", docId);
         return { id: docId };
     } catch (error) {
@@ -39,39 +36,80 @@ export const addDocumentToFirestore = async (collection, data) => {
     }
 };
 
-/**
- * Get all documents from a Firestore collection
- * @param {string} collection - Collection name
- * @returns {Promise<Array>} - Array of documents
- */
 export const getDocumentsFromFirestore = async (collection) => {
     try {
         const url = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents/${collection}`;
-        
+
         const response = await fetch(url, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
             }
         });
-        
+
         if (!response.ok) {
             const errorData = await response.text();
             throw new Error(`HTTP error! status: ${response.status}, message: ${errorData}`);
         }
 
         const result = await response.json();
-        
+
         if (result.documents) {
             return result.documents.map(doc => ({
                 id: doc.name.split('/').pop(),
                 ...convertFromFirestoreFormat(doc.fields)
             }));
         }
-        
+
         return [];
     } catch (error) {
         console.error("Error getting documents: ", error);
+        throw error;
+    }
+};
+
+
+// New function specifically for getting user list (excluding current user)
+export const getUserListFromFirestore = async (collection = 'users') => {
+    try {
+        const currentUser = getCurrentUser();
+        const allUsers = await getDocumentsFromFirestore(collection);
+
+        // Filter out the current user
+        if (currentUser) {
+            return allUsers.filter(user => user.email !== currentUser);
+        }
+
+        return allUsers;
+    } catch (error) {
+        console.error("Error getting user list: ", error);
+        throw error;
+    }
+};
+
+// Function to get a specific user by email
+export const getUserByEmailFromFirestore = async (email, collection = 'users') => {
+    try {
+        const allUsers = await getDocumentsFromFirestore(collection);
+        return allUsers.find(user => user.email === email) || null;
+    } catch (error) {
+        console.error("Error getting user by email: ", error);
+        throw error;
+    }
+};
+
+// Function to get current user data (single object, not array)
+export const getCurrentUserData = async (collection = 'users') => {
+    try {
+        const currentUser = getCurrentUser();
+        if (!currentUser) {
+            return null;
+        }
+
+        const allUsers = await getDocumentsFromFirestore(collection);
+        return allUsers.find(user => user.email === currentUser ) || null;
+    } catch (error) {
+        console.error("Error getting current user data: ", error);
         throw error;
     }
 };
@@ -85,25 +123,25 @@ export const getDocumentsFromFirestore = async (collection) => {
 // export const getDocumentFromFirestore = async (collection, docId) => {
 //     try {
 //         const url = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents/${collection}/${docId}`;
-        
+
 //         const response = await fetch(url, {
 //             method: 'GET',
 //             headers: {
 //                 'Content-Type': 'application/json',
 //             }
 //         });
-        
+
 //         if (response.status === 404) {
 //             return null; // Document not found
 //         }
-        
+
 //         if (!response.ok) {
 //             const errorData = await response.text();
 //             throw new Error(`HTTP error! status: ${response.status}, message: ${errorData}`);
 //         }
 
 //         const result = await response.json();
-        
+
 //         return {
 //             id: result.name.split('/').pop(),
 //             ...convertFromFirestoreFormat(result.fields)
@@ -124,10 +162,10 @@ export const getDocumentsFromFirestore = async (collection) => {
 // export const updateDocumentInFirestore = async (collection, docId, data) => {
 //     try {
 //         const url = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents/${collection}/${docId}`;
-        
+
 //         // Convert data to Firestore format
 //         const firestoreData = convertToFirestoreFormat(data);
-        
+
 //         const response = await fetch(url, {
 //             method: 'PATCH',
 //             headers: {
@@ -145,7 +183,7 @@ export const getDocumentsFromFirestore = async (collection) => {
 
 //         const result = await response.json();
 //         const updatedDocId = result.name.split('/').pop();
-        
+
 //         console.log("Document updated with ID: ", updatedDocId);
 //         return { id: updatedDocId };
 //     } catch (error) {
@@ -163,7 +201,7 @@ export const getDocumentsFromFirestore = async (collection) => {
 // export const deleteDocumentFromFirestore = async (collection, docId) => {
 //     try {
 //         const url = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents/${collection}/${docId}`;
-        
+
 //         const response = await fetch(url, {
 //             method: 'DELETE',
 //             headers: {
@@ -195,7 +233,7 @@ export const getDocumentsFromFirestore = async (collection) => {
 // export const queryDocumentsFromFirestore = async (collection, field, operator, value) => {
 //     try {
 //         const url = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents:runQuery`;
-        
+
 //         const query = {
 //             structuredQuery: {
 //                 from: [{ collectionId: collection }],
@@ -208,7 +246,7 @@ export const getDocumentsFromFirestore = async (collection) => {
 //                 }
 //             }
 //         };
-        
+
 //         const response = await fetch(url, {
 //             method: 'POST',
 //             headers: {
@@ -223,7 +261,7 @@ export const getDocumentsFromFirestore = async (collection) => {
 //         }
 
 //         const result = await response.json();
-        
+
 //         if (result && result.length > 0) {
 //             return result
 //                 .filter(item => item.document)
@@ -232,7 +270,7 @@ export const getDocumentsFromFirestore = async (collection) => {
 //                     ...convertFromFirestoreFormat(item.document.fields)
 //                 }));
 //         }
-        
+
 //         return [];
 //     } catch (error) {
 //         console.error("Error querying documents: ", error);
@@ -246,11 +284,11 @@ export const getDocumentsFromFirestore = async (collection) => {
 
 const convertToFirestoreFormat = (data) => {
     const converted = {};
-    
+
     for (const [key, value] of Object.entries(data)) {
         converted[key] = convertValueToFirestoreFormat(value);
     }
-    
+
     return converted;
 };
 
@@ -290,11 +328,11 @@ const convertValueToFirestoreFormat = (value) => {
 // Helper function to convert from Firestore format
 const convertFromFirestoreFormat = (fields) => {
     const converted = {};
-    
+
     for (const [key, value] of Object.entries(fields)) {
         converted[key] = convertValueFromFirestoreFormat(value);
     }
-    
+
     return converted;
 };
 
@@ -330,10 +368,10 @@ export const generateDocumentId = () => {
 export const addDocumentWithIdToFirestore = async (collection, docId, data) => {
     try {
         const url = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents/${collection}?documentId=${docId}`;
-        
+
         // Convert data to Firestore format
         const firestoreData = convertToFirestoreFormat(data);
-        
+
         const response = await fetch(url, {
             method: 'POST',
             headers: {
@@ -351,7 +389,7 @@ export const addDocumentWithIdToFirestore = async (collection, docId, data) => {
 
         const result = await response.json();
         const createdDocId = result.name.split('/').pop();
-        
+
         console.log("Document created with custom ID: ", createdDocId);
         return { id: createdDocId };
     } catch (error) {

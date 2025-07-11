@@ -1,41 +1,69 @@
 import { useState, useEffect } from "@lynx-js/react";
 import { useNavigate } from 'react-router';
 import "../../App.css";
-import { getDocumentsFromFirestore } from '../../service/api_services/firebase_api'
+import { getUserListFromFirestore, getCurrentUserData } from '../../service/api_services/firebase_api'
+import { getCurrentUser } from '../../service/firebase/auth';
+
 const UserListScreen = (props) => {
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [AuthUser, setAuthUser] = useState("");
+    const [currentUserData, setCurrentUserData] = useState({});
     const navigate = useNavigate();
-    const [apiResponse, setApiResponse] = useState(null);
-
     useEffect(() => {
+        fetchCurrentUser();
         fetchUsers();
+        fetchCurrentUserData()
     }, []);
 
     const fetchUsers = async () => {
         try {
             setLoading(true);
             // Call your actual API
-            const response = await getDocumentsFromFirestore('users'); // Replace 'users' with your collection name
+            const response = await getUserListFromFirestore(); // Replace 'users' with your collection name
             console.log('API Response:', response); // Log to console
-            setApiResponse(response); // Store the response to display
+
             setUsers(response); // Use API data or fallback to demo
         } catch (error) {
             console.error("Error fetching users:", error);
-            setApiResponse({ error: error.message }); // Store error info
+
         } finally {
             setLoading(false);
         }
     };
 
-    const handleUserSelect = (selectedUser) => {
-        // Navigate to chat screen with selected user
-        navigate('/ChatScreen');
+    const handleUserSelect = (receiverId, receiverName) => {
+        const chatData = {
+            senderId: currentUserData.id,
+            receiverId: receiverId,
+            receiverName: receiverName,
+        };
+
+        navigate('/ChatScreen', {
+            state: chatData
+        });
     };
 
     const handleBackToLogin = () => {
         navigate('/LoginScreen');
     };
+
+    const fetchCurrentUser = () => {
+        const user = getCurrentUser();
+        setAuthUser(user);
+        console.log('Current User:', user); // Debug log
+    }
+
+    const fetchCurrentUserData = async () => {
+        try {
+            const userData = await getCurrentUserData();
+            setCurrentUserData(userData);
+            console.log('Current User Data:', userData); // Debug log
+        } catch (error) {
+            console.error('Error fetching current user data:', error);
+        }
+    }
+
 
     if (loading) {
         return (
@@ -73,11 +101,27 @@ const UserListScreen = (props) => {
                 justifyContent: 'space-between',
                 flexShrink: 0
             }}>
-                <text style={{
-                    fontSize: '24px',
-                    fontWeight: 'bold',
-                    color: '#333333'
-                }}>Select User to Chat</text>
+                <view style={{
+                    height: '70px',
+                    flexDirection: 'row',
+                }}>
+                    <text style={{
+                        fontSize: '24px',
+                        fontWeight: 'bold',
+                        color: '#333333'
+                    }}>Select User to Chat</text>
+
+                    <text style={{
+                        fontSize: '18px',
+                        fontWeight: 'bold',
+                        color: '#333333'
+                    }}>{AuthUser}</text>
+                    <text style={{
+                        fontSize: '18px',
+                        fontWeight: 'bold',
+                        color: '#333333'
+                    }}>{currentUserData.id || "null"}</text>
+                </view>
 
                 <text
                     style={{
@@ -133,7 +177,9 @@ const UserListScreen = (props) => {
                                     cursor: 'pointer',
                                     transition: 'background-color 0.2s'
                                 }}
-                                bindtap={() => handleUserSelect(user)}
+                                bindtap={() => {
+                                    handleUserSelect(user.id, user.userName);
+                                }}
                                 exposure-id={`user-item-${user.id}`}
                             >
                                 <view style={{
@@ -180,9 +226,15 @@ const UserListScreen = (props) => {
                                             {user.email}
                                         </text>
 
+                                        <text style={{
+                                            fontSize: '14px',
+                                            color: '#666666'
+                                        }}>
+                                            ID: {user.id}
+                                        </text>
+
+
                                     </view>
-
-
                                     <text style={{
                                         fontSize: '20px',
                                         color: '#cccccc'
@@ -194,8 +246,6 @@ const UserListScreen = (props) => {
                         ))
                     )}
                 </view>
-
-
                 <view style={{
                     textAlign: 'center',
                     paddingBottom: '30px'
@@ -216,8 +266,6 @@ const UserListScreen = (props) => {
                         Refresh User List
                     </text>
                 </view>
-
-
             </scroll-view>
 
         </view >
