@@ -105,7 +105,9 @@ const LoginScreen = (props) => {
                         cursor: 'pointer',
                         transition: 'background-color 0.3s'
                     }}
-                    bindtap={handleLogin}
+                    bindtap={() => {
+                        handleLogin();
+                    }}
                 >
                     <text style={{
                         color: '#ffffff',

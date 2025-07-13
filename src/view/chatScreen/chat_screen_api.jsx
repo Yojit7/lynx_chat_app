@@ -19,7 +19,8 @@ export const sendMessage = async ({
             senderId: senderId,
             receiverId: receiverId,
             timeStamp: Date.now(),
-            createdAt: new Date().toISOString()
+            createdAt: new Date().toISOString(),
+            isDeleted: false
         };
 
         // URL for nested collection: messageHub/{chatRoomId}/messages
@@ -50,7 +51,6 @@ export const sendMessage = async ({
 
         return {
             id: docId,
-            chatRoomId: chatRoomId,
             ...messageData
         };
     } catch (error) {
@@ -99,6 +99,109 @@ export const getMessagesForChatRoom = async (senderId, receiverId) => {
         return [];
     } catch (error) {
         console.error("Error getting messages:", error);
+        throw error;
+    }
+};
+
+// Function to edit a message
+export const editMessage = async (senderId, receiverId, messageId, newMessage, originalMessageData) => {
+    try {
+        // Create chat room ID
+        const ids = [senderId, receiverId];
+        ids.sort();
+        const chatRoomId = ids.join("_");
+
+        // URL for specific message document
+        const url = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents/messageHub/${chatRoomId}/messages/${messageId}`;
+
+        // Update data - send the complete message object with edit metadata (excluding id)
+        const { id, ...messageDataWithoutId } = originalMessageData;
+        const updateData = {
+            ...messageDataWithoutId,
+            message: newMessage,
+            editedAt: new Date().toISOString(),
+            isEdited: true
+        };
+
+        // Convert data to Firestore format
+        const firestoreData = convertToFirestoreFormat(updateData);
+
+        const response = await fetch(url, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                fields: firestoreData
+            })
+        });
+
+        if (!response.ok) {
+            const errorData = await response.text();
+            throw new Error(`HTTP error! status: ${response.status}, message: ${errorData}`);
+        }
+
+        const result = await response.json();
+        console.log("Message edited successfully:", messageId);
+
+        return {
+            id: messageId,
+            ...convertFromFirestoreFormat(result.fields)
+        };
+    } catch (error) {
+        console.error("Error editing message:", error);
+        throw error;
+    }
+};
+
+// Function to delete a message
+export const deleteMessage = async (senderId, receiverId, messageId, originalMessageData) => {
+    try {
+        // Create chat room ID
+        const ids = [senderId, receiverId];
+        ids.sort();
+        const chatRoomId = ids.join("_");
+
+        console.log("Deleting message:", messageId, "in chat room:", chatRoomId);
+
+        // URL for specific message document
+        const url = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents/messageHub/${chatRoomId}/messages/${messageId}`;
+
+        // Update data - send the complete message object with delete metadata (excluding id)
+        const { id, ...messageDataWithoutId } = originalMessageData;
+        const updateData = {
+            ...messageDataWithoutId,
+            isDeleted: true,
+            deletedAt: new Date().toISOString()
+        };
+
+        // Convert data to Firestore format
+        const firestoreData = convertToFirestoreFormat(updateData);
+
+        const response = await fetch(url, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                fields: firestoreData
+            })
+        });
+
+        if (!response.ok) {
+            const errorData = await response.text();
+            throw new Error(`HTTP error! status: ${response.status}, message: ${errorData}`);
+        }
+
+        const result = await response.json();
+        console.log("Message deleted successfully:", messageId);
+
+        return {
+            id: messageId,
+            ...convertFromFirestoreFormat(result.fields)
+        };
+    } catch (error) {
+        console.error("Error deleting message:", error);
         throw error;
     }
 };
