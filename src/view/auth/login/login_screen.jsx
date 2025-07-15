@@ -6,34 +6,50 @@ import { doSignInWithEmailAndPassword } from '../../../service/firebase/auth'
 const LoginScreen = (props) => {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
-    const [success, setSuccess] = useState("Not Logged In");
+    const [success, setSuccess] = useState("");
+    const [error, setError] = useState("");
+    const [loading, setLoading] = useState(false);
 
     const navigate = useNavigate();
     const handleEmailInput = (e) => {
         const currentValue = e.detail.value.trim();
         setEmail(currentValue);
+        // Clear error when user starts typing
+        if (error) setError("");
     };
 
     const handlePasswordInput = (e) => {
         const currentValue = e.detail.value.trim();
         setPassword(currentValue);
+        // Clear error when user starts typing
+        if (error) setError("");
     };
 
     const handleLogin = async () => {
+        // Validate inputs
+        if (!email.trim()) {
+            setError("Email is required");
+            return;
+        }
+        if (!password.trim()) {
+            setError("Password is required");
+            return;
+        }
+
+        setLoading(true);
+        setError("");
+        setSuccess("");
 
         try {
-            await doSignInWithEmailAndPassword("jimmysuthar789@gmail.com", "Suthar@123")
-                .then((user) => {
-                    console.log("Login successful");
-                    setSuccess(user.user.email + " Logged In Successfully");
-                    navigate('/UserListScreen');
-                }).catch((error) => {
-                    console.error("Login failed:", error)
-                    setSuccess(error + " Logged In Successfully");
-                });
+            const user = await doSignInWithEmailAndPassword(email, password);
+            console.log("Login successful");
+            setSuccess(user.user.email + " Logged In Successfully");
+            navigate('/UserListScreen');
         } catch (error) {
             console.error("Login failed:", error);
-            setSuccess("Login failed: " + error.message);
+            setError("Login failed: " + error.message);
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -99,21 +115,26 @@ const LoginScreen = (props) => {
                     style={{
                         width: '100%',
                         padding: '12px',
-                        backgroundColor: '#007bff',
+                        backgroundColor: (!email.trim() || !password.trim() || loading) ? '#ccc' : '#007bff',
                         borderRadius: '4px',
                         textAlign: 'center',
-                        cursor: 'pointer',
-                        transition: 'background-color 0.3s'
+                        cursor: (!email.trim() || !password.trim() || loading) ? 'not-allowed' : 'pointer',
+                        transition: 'background-color 0.3s',
+                        opacity: loading ? '0.7' : '1'
                     }}
                     bindtap={() => {
-                        handleLogin();
+                        if (!loading && email.trim() && password.trim()) {
+                            handleLogin();
+                        }
                     }}
                 >
                     <text style={{
                         color: '#ffffff',
                         fontSize: '16px',
                         fontWeight: 'bold'
-                    }}>Login</text>
+                    }}>
+                        {loading ? 'Logging in...' : 'Login'}
+                    </text>
                 </view>
 
             </view>
@@ -125,12 +146,36 @@ const LoginScreen = (props) => {
                 fontSize: '16px',
                 fontWeight: 'bold'
             }}>Don'y have Account? SignUp</text>
-            <text style={{
-                marginTop: '20px',
-                color: 'black',
-                fontSize: '16px',
-                fontWeight: 'bold'
-            }}>{success}</text>
+            
+            {/* Error message */}
+            {error && (
+                <text style={{
+                    marginTop: '15px',
+                    color: '#ff0000',
+                    fontSize: '14px',
+                    fontWeight: 'bold',
+                    textAlign: 'center',
+                    backgroundColor: '#ffebee',
+                    padding: '10px',
+                    borderRadius: '4px',
+                    border: '1px solid #ffcdd2'
+                }}>{error}</text>
+            )}
+            
+            {/* Success message */}
+            {success && (
+                <text style={{
+                    marginTop: '15px',
+                    color: '#4caf50',
+                    fontSize: '14px',
+                    fontWeight: 'bold',
+                    textAlign: 'center',
+                    backgroundColor: '#e8f5e8',
+                    padding: '10px',
+                    borderRadius: '4px',
+                    border: '1px solid #c8e6c9'
+                }}>{success}</text>
+            )}
         </view>
     );
 }

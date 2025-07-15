@@ -6,50 +6,68 @@ import { addDocumentToFirestore } from '../../../service/api_services/firebase_a
 import User from '../../../model/user_model';
 
 const SignUpScreen = (props) => {
-
-
     const [email, setEmail] = useState("");
     const [userName, setUserName] = useState("");
-
     const [password, setPassword] = useState("");
-    const [success, setSuccess] = useState("Not Logged In");
+    const [success, setSuccess] = useState("");
+    const [error, setError] = useState("");
+    const [loading, setLoading] = useState(false);
 
     const navigate = useNavigate();
 
     const handleEmailInput = (e) => {
         const currentValue = e.detail.value.trim();
         setEmail(currentValue);
+        // Clear error when user starts typing
+        if (error) setError("");
     };
 
     const handlePasswordInput = (e) => {
         const currentValue = e.detail.value.trim();
         setPassword(currentValue);
+        // Clear error when user starts typing
+        if (error) setError("");
     };
 
     const handleUserNameInput = (e) => {
         const currentValue = e.detail.value.trim();
         setUserName(currentValue);
+        // Clear error when user starts typing
+        if (error) setError("");
     };
 
-    const newUser = new User(userName, email);
-
-    async function handleLogin() {
-        try {
-            await doCreateUserWithEmailAndPassword(email, password)
-                .then(async (user) => {
-                    console.log("Login successful");
-                    const userCredential = await addDocumentToFirestore('users', newUser.toFirestore());
-                    setSuccess(userCredential.id + " Logged In Successfully");
-                    navigate('/UserListScreen')
-                }).catch((error) => {
-                    console.error("Login failed:", error)
-                    setSuccess(error + " Error Occured");
-                });
-        } catch (error) {
-            console.error("Login failed:", error);
-            setSuccess("Login failed: " + error.message);
+    const handleSignUp = async () => {
+        // Validate inputs
+        if (!email.trim()) {
+            setError("Email is required");
+            return;
+        }
+        if (!userName.trim()) {
+            setError("Username is required");
+            return;
+        }
+        if (!password.trim()) {
+            setError("Password is required");
+            return;
         }
 
+        setLoading(true);
+        setError("");
+        setSuccess("");
+
+        try {
+            const newUser = new User(userName, email);
+            const user = await doCreateUserWithEmailAndPassword(email, password);
+            console.log("SignUp successful");
+            const userCredential = await addDocumentToFirestore('users', newUser.toFirestore());
+            setSuccess(userCredential.id + " Account Created Successfully");
+            navigate('/UserListScreen');
+        } catch (error) {
+            console.error("SignUp failed:", error);
+            setError("SignUp failed: " + error.message);
+        } finally {
+            setLoading(false);
+        }
     };
 
 
@@ -133,24 +151,26 @@ const SignUpScreen = (props) => {
                     style={{
                         width: '100%',
                         padding: '12px',
-                        backgroundColor: '#007bff',
+                        backgroundColor: (!email.trim() || !userName.trim() || !password.trim() || loading) ? '#ccc' : '#007bff',
                         borderRadius: '4px',
                         textAlign: 'center',
-                        cursor: 'pointer',
-                        transition: 'background-color 0.3s'
+                        cursor: (!email.trim() || !userName.trim() || !password.trim() || loading) ? 'not-allowed' : 'pointer',
+                        transition: 'background-color 0.3s',
+                        opacity: loading ? '0.7' : '1'
                     }}
-                    bindtap={async () => {
-                        setSuccess("Button Clicked");
-                        handleLogin();
-
-
+                    bindtap={() => {
+                        if (!loading && email.trim() && userName.trim() && password.trim()) {
+                            handleSignUp();
+                        }
                     }}
                 >
                     <text style={{
                         color: '#ffffff',
                         fontSize: '16px',
                         fontWeight: 'bold'
-                    }}>SingUp</text>
+                    }}>
+                        {loading ? 'Creating Account...' : 'SignUp'}
+                    </text>
                 </view>
             </view>
             <text bindtap={() => {
@@ -162,12 +182,35 @@ const SignUpScreen = (props) => {
                 fontWeight: 'bold'
             }}>Already have Account? Login</text>
 
-            <text style={{
-                marginTop: '20px',
-                color: 'red',
-                fontSize: '16px',
-                fontWeight: 'bold'
-            }}>{success}</text>
+            {/* Error message */}
+            {error && (
+                <text style={{
+                    marginTop: '15px',
+                    color: '#ff0000',
+                    fontSize: '14px',
+                    fontWeight: 'bold',
+                    textAlign: 'center',
+                    backgroundColor: '#ffebee',
+                    padding: '10px',
+                    borderRadius: '4px',
+                    border: '1px solid #ffcdd2'
+                }}>{error}</text>
+            )}
+            
+            {/* Success message */}
+            {success && (
+                <text style={{
+                    marginTop: '15px',
+                    color: '#4caf50',
+                    fontSize: '14px',
+                    fontWeight: 'bold',
+                    textAlign: 'center',
+                    backgroundColor: '#e8f5e8',
+                    padding: '10px',
+                    borderRadius: '4px',
+                    border: '1px solid #c8e6c9'
+                }}>{success}</text>
+            )}
 
         </view>
     );

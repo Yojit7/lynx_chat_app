@@ -15,6 +15,7 @@ const ChatScreen = () => {
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
     const [messageToDelete, setMessageToDelete] = useState(null);
     const [deleteError, setDeleteError] = useState('');
+    const intervalRef = useRef(null);
 
     useEffect(() => {
         // Get data from navigation state
@@ -26,10 +27,22 @@ const ChatScreen = () => {
 
             // Load existing messages
             loadMessages(receivedData.senderId, receivedData.receiverId);
+
+            // Set up interval to load messages every 2 seconds
+            intervalRef.current = setInterval(() => {
+                loadMessages(receivedData.senderId, receivedData.receiverId);
+            }, 2000);
         } else {
             console.error('No chat data received');
             navigate('/UserListScreen');
         }
+
+        // Cleanup interval on unmount
+        return () => {
+            if (intervalRef.current) {
+                clearInterval(intervalRef.current);
+            }
+        };
     }, [location.state, navigate]);
 
     const loadMessages = async (senderId, receiverId) => {
@@ -94,9 +107,9 @@ const ChatScreen = () => {
         if (messageToDelete) {
             try {
                 await deleteMessage(
-                    chatData.senderId, 
-                    chatData.receiverId, 
-                    messageToDelete.id, 
+                    chatData.senderId,
+                    chatData.receiverId,
+                    messageToDelete.id,
                     messageToDelete
                 );
 
@@ -131,11 +144,11 @@ const ChatScreen = () => {
             try {
                 // Find the original message data
                 const originalMessage = messages.find(msg => msg.id === editingMessageId);
-                
+
                 await editMessage(
-                    chatData.senderId, 
-                    chatData.receiverId, 
-                    editingMessageId, 
+                    chatData.senderId,
+                    chatData.receiverId,
+                    editingMessageId,
                     editingText.trim(),
                     originalMessage
                 );
